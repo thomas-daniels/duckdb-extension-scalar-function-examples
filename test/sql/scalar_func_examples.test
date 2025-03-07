@@ -1,0 +1,23 @@
+# name: test/sql/scalar_func_examples.test
+# description: test scalar_func_examples extension
+# group: [scalar_func_examples]
+
+# Before we load the extension, this will fail
+statement error
+SELECT scalar_func_examples('Sam');
+----
+Catalog Error: Scalar Function with name scalar_func_examples does not exist!
+
+# Require statement will ensure this test is run with this extension loaded
+require scalar_func_examples
+
+# Confirm the extension works
+query I
+SELECT scalar_func_examples('Sam');
+----
+ScalarFuncExamples Sam 🐥
+
+query I
+SELECT scalar_func_examples_openssl_version('Michael') ILIKE 'ScalarFuncExamples Michael, my linked OpenSSL version is OpenSSL%';
+----
+true
