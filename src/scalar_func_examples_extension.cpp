@@ -41,6 +41,18 @@ inline void FibonacciScalarFun(DataChunk &args, ExpressionState &state, Vector &
 	    });
 }
 
+inline void DiscriminantScalarFun(DataChunk &args, ExpressionState &state, Vector &result) {
+	auto &a_vector = args.data[0];
+	auto &b_vector = args.data[1];
+	auto &c_vector = args.data[2];
+
+	TernaryExecutor::Execute<double_t, double_t, double_t, double_t>(a_vector, b_vector, c_vector, result, args.size(),
+	                                                                 [&](double a, double b, double c) {
+		                                                                 auto discriminant = b * b - 4 * a * c;
+		                                                                 return discriminant;
+	                                                                 });
+}
+
 static void LoadInternal(DatabaseInstance &instance) {
 	auto quack_scalar_function = ScalarFunction("quack", {LogicalType::VARCHAR}, LogicalType::VARCHAR, QuackScalarFun);
 	ExtensionUtil::RegisterFunction(instance, quack_scalar_function);
@@ -52,6 +64,11 @@ static void LoadInternal(DatabaseInstance &instance) {
 	auto fibonacci_scalar_function =
 	    ScalarFunction("fibonacci", {LogicalType::INTEGER}, LogicalType::BIGINT, FibonacciScalarFun);
 	ExtensionUtil::RegisterFunction(instance, fibonacci_scalar_function);
+
+	auto discriminant_scalar_function =
+	    ScalarFunction("discriminant", {LogicalType::DOUBLE, LogicalType::DOUBLE, LogicalType::DOUBLE},
+	                   LogicalType::DOUBLE, DiscriminantScalarFun);
+	ExtensionUtil::RegisterFunction(instance, discriminant_scalar_function);
 }
 
 void ScalarFuncExamplesExtension::Load(DuckDB &db) {
