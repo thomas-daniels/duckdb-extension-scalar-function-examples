@@ -10,19 +10,27 @@
 
 namespace duckdb {
 
-inline void ScalarFuncExamplesScalarFun(DataChunk &args, ExpressionState &state, Vector &result) {
-    auto &name_vector = args.data[0];
-    UnaryExecutor::Execute<string_t, string_t>(
-	    name_vector, result, args.size(),
-	    [&](string_t name) {
-			return StringVector::AddString(result, "ScalarFuncExamples "+name.GetString()+" 🐥");
-        });
+inline void QuackScalarFun(DataChunk &args, ExpressionState &state, Vector &result) {
+	auto &name_vector = args.data[0];
+	UnaryExecutor::Execute<string_t, string_t>(name_vector, result, args.size(), [&](string_t name) {
+		return StringVector::AddString(result, "Quack " + name.GetString() + " 🐥");
+	});
+}
+
+inline void IsLeapYearScalarFun(DataChunk &args, ExpressionState &state, Vector &result) {
+	auto &year_vector = args.data[0];
+	UnaryExecutor::Execute<int32_t, bool>(year_vector, result, args.size(), [&](int32_t year) {
+		return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+	});
 }
 
 static void LoadInternal(DatabaseInstance &instance) {
-    // Register a scalar function
-    auto scalar_func_examples_scalar_function = ScalarFunction("scalar_func_examples", {LogicalType::VARCHAR}, LogicalType::VARCHAR, ScalarFuncExamplesScalarFun);
-    ExtensionUtil::RegisterFunction(instance, scalar_func_examples_scalar_function);
+	auto quack_scalar_function = ScalarFunction("quack", {LogicalType::VARCHAR}, LogicalType::VARCHAR, QuackScalarFun);
+	ExtensionUtil::RegisterFunction(instance, quack_scalar_function);
+
+	auto is_leap_year_scalar_function =
+	    ScalarFunction("is_leap_year", {LogicalType::INTEGER}, LogicalType::BOOLEAN, IsLeapYearScalarFun);
+	ExtensionUtil::RegisterFunction(instance, is_leap_year_scalar_function);
 }
 
 void ScalarFuncExamplesExtension::Load(DuckDB &db) {
@@ -45,8 +53,8 @@ std::string ScalarFuncExamplesExtension::Version() const {
 extern "C" {
 
 DUCKDB_EXTENSION_API void scalar_func_examples_init(duckdb::DatabaseInstance &db) {
-    duckdb::DuckDB db_wrapper(db);
-    db_wrapper.LoadExtension<duckdb::ScalarFuncExamplesExtension>();
+	duckdb::DuckDB db_wrapper(db);
+	db_wrapper.LoadExtension<duckdb::ScalarFuncExamplesExtension>();
 }
 
 DUCKDB_EXTENSION_API const char *scalar_func_examples_version() {
