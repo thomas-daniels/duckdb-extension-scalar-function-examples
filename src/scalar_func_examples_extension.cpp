@@ -24,6 +24,23 @@ inline void IsLeapYearScalarFun(DataChunk &args, ExpressionState &state, Vector 
 	});
 }
 
+inline void FibonacciScalarFun(DataChunk &args, ExpressionState &state, Vector &result) {
+	auto &input_vector = args.data[0];
+
+	auto Phi = (1 + sqrt(5)) / 2;
+	auto phi = Phi - 1;
+
+	UnaryExecutor::ExecuteWithNulls<int32_t, int64_t>(
+	    input_vector, result, args.size(), [&](int32_t input, ValidityMask &mask, idx_t idx) {
+		    if (input >= 0 && input < 93) {
+			    return lround((pow(Phi, input) - pow(-phi, input)) / sqrt(5));
+		    } else {
+			    mask.SetInvalid(idx);
+			    return 0l;
+		    }
+	    });
+}
+
 static void LoadInternal(DatabaseInstance &instance) {
 	auto quack_scalar_function = ScalarFunction("quack", {LogicalType::VARCHAR}, LogicalType::VARCHAR, QuackScalarFun);
 	ExtensionUtil::RegisterFunction(instance, quack_scalar_function);
@@ -31,6 +48,10 @@ static void LoadInternal(DatabaseInstance &instance) {
 	auto is_leap_year_scalar_function =
 	    ScalarFunction("is_leap_year", {LogicalType::INTEGER}, LogicalType::BOOLEAN, IsLeapYearScalarFun);
 	ExtensionUtil::RegisterFunction(instance, is_leap_year_scalar_function);
+
+	auto fibonacci_scalar_function =
+	    ScalarFunction("fibonacci", {LogicalType::INTEGER}, LogicalType::BIGINT, FibonacciScalarFun);
+	ExtensionUtil::RegisterFunction(instance, fibonacci_scalar_function);
 }
 
 void ScalarFuncExamplesExtension::Load(DuckDB &db) {
