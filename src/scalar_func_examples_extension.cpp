@@ -54,19 +54,6 @@ inline void DiscriminantScalarFun(DataChunk &args, ExpressionState &state, Vecto
 	                                                                 });
 }
 
-/*struct QuadraticEquationSolution {
-    double x1;
-    double x2;
-    bool exists;
-
-    static void AssignResult(Vector &result, idx_t i, QuadraticEquationSolution value) {
-        auto &entries = StructVector::GetEntries(result);
-        entries[0]->SetValue(i, value.x1);
-        entries[1]->SetValue(i, value.x2);
-        result.validity.Set(i, value.exists);
-    }
-};*/
-
 inline void SolveQuadraticEquationScalarFunc(DataChunk &args, ExpressionState &state, Vector &result) {
 	auto &a_vector = args.data[0];
 	auto &b_vector = args.data[1];
@@ -78,15 +65,6 @@ inline void SolveQuadraticEquationScalarFunc(DataChunk &args, ExpressionState &s
 	    [&](PrimitiveType<double_t> a, PrimitiveType<double_t> b, PrimitiveType<double_t> c) {
 		    auto discriminant = b.val * b.val - 4 * a.val * c.val;
 		    StructTypeBinary<double_t, double_t> solution;
-		    /*if (discriminant >= 0) {
-		        solution.exists = true;
-		        solution.x1 = (-b.val + sqrt(discriminant)) / (2 * a.val);
-		        solution.x2 = (-b.val - sqrt(discriminant)) / (2 * a.val);
-		    } else {
-		        solution.exists = false;
-		        solution.x1 = 0;
-		        solution.x2 = 0;
-		    }*/
 		    solution.a_val = (-b.val + sqrt(discriminant)) / (2 * a.val);
 		    solution.b_val = (-b.val - sqrt(discriminant)) / (2 * a.val);
 		    return solution;
@@ -99,26 +77,14 @@ struct QuadraticEquationSolution {
 	bool exists;
 
 	static void AssignResult(Vector &result, idx_t i, QuadraticEquationSolution solution) {
-		if (solution.exists) {
-			child_list_t<Value> values;
-			values.push_back(std::make_pair("x1", solution.x1));
-			values.push_back(std::make_pair("x2", solution.x2));
-			result.SetValue(i, Value::STRUCT(values));
+		auto &entries = StructVector::GetEntries(result);
+		if (!solution.exists) {
+			FlatVector::SetNull(result, i, true);
 		} else {
-			result.SetValue(i, Value());
+			FlatVector::GetData(*entries[0])[i] = solution.x1;
+			FlatVector::GetData(*entries[1])[i] = solution.x2;
 		}
 	}
-
-	// Alternative implementation, directly working with the vectors:
-	//
-	// static void AssignResult(Vector &result, idx_t i, QuadraticEquationSolution solution) {
-	// 	auto &entries = StructVector::GetEntries(result);
-	// 	entries[0]->SetValue(i, solution.x1);
-	// 	entries[1]->SetValue(i, solution.x2);
-	// 	if (!solution.exists) {
-	// 		FlatVector::SetNull(result, i, true);
-	// 	}
-	// }
 };
 
 inline void SolveQuadraticEquation2ScalarFunc(DataChunk &args, ExpressionState &state, Vector &result) {
