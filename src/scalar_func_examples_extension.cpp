@@ -55,7 +55,7 @@ inline void DiscriminantScalarFun(DataChunk &args, ExpressionState &state,
   auto &b_vector = args.data[1];
   auto &c_vector = args.data[2];
 
-  TernaryExecutor::Execute<double_t, double_t, double_t, double_t>(
+  TernaryExecutor::Execute<double, double, double, double>(
       a_vector, b_vector, c_vector, result, args.size(),
       [&](double a, double b, double c) {
         auto discriminant = b * b - 4 * a * c;
@@ -71,13 +71,13 @@ inline void SolveQuadraticEquationScalarFunc(DataChunk &args,
   auto &c_vector = args.data[2];
 
   GenericExecutor::ExecuteTernary<
-      PrimitiveType<double_t>, PrimitiveType<double_t>,
-      PrimitiveType<double_t>, StructTypeBinary<double_t, double_t>>(
+      PrimitiveType<double>, PrimitiveType<double>, PrimitiveType<double>,
+      StructTypeBinary<double, double>>(
       a_vector, b_vector, c_vector, result, args.size(),
-      [&](PrimitiveType<double_t> a, PrimitiveType<double_t> b,
-          PrimitiveType<double_t> c) {
+      [&](PrimitiveType<double> a, PrimitiveType<double> b,
+          PrimitiveType<double> c) {
         auto discriminant = b.val * b.val - 4 * a.val * c.val;
-        StructTypeBinary<double_t, double_t> solution;
+        StructTypeBinary<double, double> solution;
         solution.a_val = (-b.val + sqrt(discriminant)) / (2 * a.val);
         solution.b_val = (-b.val - sqrt(discriminant)) / (2 * a.val);
         return solution;
@@ -95,8 +95,8 @@ struct QuadraticEquationSolution {
     if (!solution.exists) {
       FlatVector::SetNull(result, i, true);
     } else {
-      FlatVector::GetData(*entries[0])[i] = solution.x1;
-      FlatVector::GetData(*entries[1])[i] = solution.x2;
+      FlatVector::GetData<double>(*entries[0])[i] = solution.x1;
+      FlatVector::GetData<double>(*entries[1])[i] = solution.x2;
     }
   }
 };
@@ -109,11 +109,11 @@ inline void SolveQuadraticEquation2ScalarFunc(DataChunk &args,
   auto &c_vector = args.data[2];
 
   GenericExecutor::ExecuteTernary<
-      PrimitiveType<double_t>, PrimitiveType<double_t>,
-      PrimitiveType<double_t>, QuadraticEquationSolution>(
+      PrimitiveType<double>, PrimitiveType<double>, PrimitiveType<double>,
+      QuadraticEquationSolution>(
       a_vector, b_vector, c_vector, result, args.size(),
-      [&](PrimitiveType<double_t> a, PrimitiveType<double_t> b,
-          PrimitiveType<double_t> c) {
+      [&](PrimitiveType<double> a, PrimitiveType<double> b,
+          PrimitiveType<double> c) {
         auto discriminant = b.val * b.val - 4 * a.val * c.val;
         QuadraticEquationSolution solution;
         if (discriminant >= 0) {
@@ -132,10 +132,10 @@ inline void QuadraticEquationFromSolutionScalarFunc(DataChunk &args,
                                                     Vector &result) {
   auto &solution_vector = args.data[0];
 
-  GenericExecutor::ExecuteUnary<StructTypeBinary<double_t, double_t>,
+  GenericExecutor::ExecuteUnary<StructTypeBinary<double, double>,
                                 PrimitiveType<string_t>>(
       solution_vector, result, args.size(),
-      [&](StructTypeBinary<double_t, double_t> solution) {
+      [&](StructTypeBinary<double, double> solution) {
         double x1 = solution.a_val;
         double x2 = solution.b_val;
 
