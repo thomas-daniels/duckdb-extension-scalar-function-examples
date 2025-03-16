@@ -4,6 +4,8 @@ This repository is based on https://github.com/duckdb/extension-template, check 
 
 ---
 
+Contains examples of implementing scalar functions in DuckDB extensions. [Take a look at my blog post!](https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html).
+
 
 ## Building
 

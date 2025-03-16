@@ -11,6 +11,7 @@
 
 namespace duckdb {
 
+// `quack` function originally from the DuckDB extension template
 inline void QuackScalarFun(DataChunk &args, ExpressionState &state,
                            Vector &result) {
   auto &name_vector = args.data[0];
@@ -21,6 +22,22 @@ inline void QuackScalarFun(DataChunk &args, ExpressionState &state,
       });
 }
 
+// https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#the-basics
+inline void DiscriminantScalarFun(DataChunk &args, ExpressionState &state,
+                                  Vector &result) {
+  auto &a_vector = args.data[0];
+  auto &b_vector = args.data[1];
+  auto &c_vector = args.data[2];
+
+  TernaryExecutor::Execute<double, double, double, double>(
+      a_vector, b_vector, c_vector, result, args.size(),
+      [&](double a, double b, double c) {
+        auto discriminant = b * b - 4 * a * c;
+        return discriminant;
+      });
+}
+
+// https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#returning-null
 inline void FibonacciScalarFun(DataChunk &args, ExpressionState &state,
                                Vector &result) {
   auto &input_vector = args.data[0];
@@ -40,20 +57,7 @@ inline void FibonacciScalarFun(DataChunk &args, ExpressionState &state,
       });
 }
 
-inline void DiscriminantScalarFun(DataChunk &args, ExpressionState &state,
-                                  Vector &result) {
-  auto &a_vector = args.data[0];
-  auto &b_vector = args.data[1];
-  auto &c_vector = args.data[2];
-
-  TernaryExecutor::Execute<double, double, double, double>(
-      a_vector, b_vector, c_vector, result, args.size(),
-      [&](double a, double b, double c) {
-        auto discriminant = b * b - 4 * a * c;
-        return discriminant;
-      });
-}
-
+// https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#returning-a-struct-or-list
 inline void SolveQuadraticEquationScalarFunc(DataChunk &args,
                                              ExpressionState &state,
                                              Vector &result) {
@@ -75,6 +79,7 @@ inline void SolveQuadraticEquationScalarFunc(DataChunk &args,
       });
 }
 
+// https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#custom-result-type-with-assignresult
 struct QuadraticEquationSolution {
   double x1;
   double x2;
@@ -118,6 +123,7 @@ inline void SolveQuadraticEquation2ScalarFunc(DataChunk &args,
       });
 }
 
+// https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#taking-a-struct-as-input-argumentz
 inline void QuadraticEquationFromSolutionScalarFunc(DataChunk &args,
                                                     ExpressionState &state,
                                                     Vector &result) {
@@ -142,17 +148,20 @@ static void LoadInternal(DatabaseInstance &instance) {
       "quack", {LogicalType::VARCHAR}, LogicalType::VARCHAR, QuackScalarFun);
   ExtensionUtil::RegisterFunction(instance, quack_scalar_function);
 
-  auto fibonacci_scalar_function =
-      ScalarFunction("fibonacci", {LogicalType::INTEGER}, LogicalType::BIGINT,
-                     FibonacciScalarFun);
-  ExtensionUtil::RegisterFunction(instance, fibonacci_scalar_function);
-
+  // https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#the-basics
   auto discriminant_scalar_function = ScalarFunction(
       "discriminant",
       {LogicalType::DOUBLE, LogicalType::DOUBLE, LogicalType::DOUBLE},
       LogicalType::DOUBLE, DiscriminantScalarFun);
   ExtensionUtil::RegisterFunction(instance, discriminant_scalar_function);
 
+  // https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#returning-null
+  auto fibonacci_scalar_function =
+      ScalarFunction("fibonacci", {LogicalType::INTEGER}, LogicalType::BIGINT,
+                     FibonacciScalarFun);
+  ExtensionUtil::RegisterFunction(instance, fibonacci_scalar_function);
+
+  // https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#returning-a-struct-or-list
   child_list_t<LogicalType> quadratic_equation_solution_child_types;
   quadratic_equation_solution_child_types.push_back(
       std::make_pair("x1", LogicalType::DOUBLE));
@@ -166,6 +175,7 @@ static void LoadInternal(DatabaseInstance &instance) {
   ExtensionUtil::RegisterFunction(instance,
                                   solve_quadratic_equation_scalar_function);
 
+  // https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#custom-result-type-with-assignresult
   auto solve_quadratic_equation_scalar_function2 = ScalarFunction(
       "solve_quadratic_equation2",
       {LogicalType::DOUBLE, LogicalType::DOUBLE, LogicalType::DOUBLE},
@@ -174,6 +184,7 @@ static void LoadInternal(DatabaseInstance &instance) {
   ExtensionUtil::RegisterFunction(instance,
                                   solve_quadratic_equation_scalar_function2);
 
+  // https://thomasd.be/2025/03/16/duckdb-extension-scalar-functions.html#taking-a-struct-as-input-argument
   auto quadratic_equation_from_solution_scalar_function = ScalarFunction(
       "quadratic_equation_from_solution",
       {LogicalType::STRUCT(quadratic_equation_solution_child_types)},
