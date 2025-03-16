@@ -21,15 +21,6 @@ inline void QuackScalarFun(DataChunk &args, ExpressionState &state,
       });
 }
 
-inline void IsLeapYearScalarFun(DataChunk &args, ExpressionState &state,
-                                Vector &result) {
-  auto &year_vector = args.data[0];
-  UnaryExecutor::Execute<int32_t, bool>(
-      year_vector, result, args.size(), [&](int32_t year) {
-        return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
-      });
-}
-
 inline void FibonacciScalarFun(DataChunk &args, ExpressionState &state,
                                Vector &result) {
   auto &input_vector = args.data[0];
@@ -150,11 +141,6 @@ static void LoadInternal(DatabaseInstance &instance) {
   auto quack_scalar_function = ScalarFunction(
       "quack", {LogicalType::VARCHAR}, LogicalType::VARCHAR, QuackScalarFun);
   ExtensionUtil::RegisterFunction(instance, quack_scalar_function);
-
-  auto is_leap_year_scalar_function =
-      ScalarFunction("is_leap_year", {LogicalType::INTEGER},
-                     LogicalType::BOOLEAN, IsLeapYearScalarFun);
-  ExtensionUtil::RegisterFunction(instance, is_leap_year_scalar_function);
 
   auto fibonacci_scalar_function =
       ScalarFunction("fibonacci", {LogicalType::INTEGER}, LogicalType::BIGINT,
